@@ -1,0 +1,265 @@
+{
+  "checks_failed": [],
+  "checks_passed": 32,
+  "checks_total": 32,
+  "label": "MEASURED",
+  "pinned_commit": "0085a1ff885d6a446369cf73a4430f75af22be55",
+  "results": [
+    {
+      "claim": "Vendored files match the pinned postfiatd tree (git blob SHA-1 + size).",
+      "evidence": "evidence/pinned-tree-manifest.json",
+      "id": "PIN-01",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "commit=0085a1ff885d6a446369cf73a4430f75af22be55 files=31"
+    },
+    {
+      "claim": "Pinned commit is the LIVE main HEAD re-fetched via the GitHub API at build start.",
+      "evidence": "evidence/pinned-tree-manifest.json (commit_date 2026-10-10T16:53:26Z, merge PR #50, 1.0.9)",
+      "id": "PIN-02",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "0085a1ff885d6a446369cf73a4430f75af22be55"
+    },
+    {
+      "claim": "Master validator keys live in validator-keys.json at /root/.ripple/validator-keys.json inside the container.",
+      "evidence": "docs/NodeSetup.md lines [291]; docs/ValidatorKeyUpdate.md lines [75]",
+      "id": "REC-01",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "path=/root/.ripple/validator-keys.json"
+    },
+    {
+      "claim": "validator-keys.json is deleted whenever the Docker container is restarted or recreated.",
+      "evidence": "docs/ValidatorKeyUpdate.md lines [16]; docs/NodeSetup.md lines [365]",
+      "id": "REC-02",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "deleted on restart/recreate: documented in both guides"
+    },
+    {
+      "claim": "Without a master-key backup the operator loses the ability to generate new tokens, update the domain, and revoke compromised keys; a lost master key means a completely new validator identity.",
+      "evidence": "docs/NodeSetup.md lines [376, 377, 378, 380]",
+      "id": "REC-03",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "lost abilities: token generation, domain update, revocation; remedy: new identity"
+    },
+    {
+      "claim": "Seed path derives the key pair directly and sets manifest sequence 0 (no manifest indirection, no sequence state).",
+      "evidence": "src/xrpld/app/misc/detail/ValidatorKeys.cpp lines [88]",
+      "id": "REC-04",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "seed-path sequence=0"
+    },
+    {
+      "claim": "Token path verifies the derived public key equals the manifest signing key, then adopts the manifest sequence.",
+      "evidence": "src/xrpld/app/misc/detail/ValidatorKeys.cpp lines [50, 61]",
+      "id": "REC-05",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "token-path: pk==signingKey required; sequence=m->sequence"
+    },
+    {
+      "claim": "[validation_seed] and [validator_token] are mutually exclusive; both set is a fatal config error.",
+      "evidence": "src/xrpld/app/misc/detail/ValidatorKeys.cpp lines [35]; src/xrpld/core/detail/Config.cpp lines [638]",
+      "id": "REC-06",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "fatal on both-sections-set: yes"
+    },
+    {
+      "claim": "Each new token invalidates all previous tokens and carries a higher sequence number than the previous one.",
+      "evidence": "docs/NodeSetup.md lines [274]; docs/ValidatorKeyUpdate.md lines [64, 239]",
+      "id": "REC-07",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "token rotation: monotonic sequence, old tokens invalidated"
+    },
+    {
+      "claim": "A manifest whose sequence is not strictly greater than the cached sequence is disposed as stale and ignored.",
+      "evidence": "src/xrpld/app/misc/detail/Manifest.cpp lines [411, 424, 504]",
+      "id": "REC-08",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "stale rule: m.sequence <= cached sequence -> stale"
+    },
+    {
+      "claim": "Revocation is a manifest with the maximum sequence number (0xFFFFFFFF); no higher sequence is possible afterwards.",
+      "evidence": "src/xrpld/app/misc/detail/Manifest.cpp lines [240]; src/xrpld/app/misc/Manifest.h lines [71]",
+      "id": "REC-09",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "revocation sequence=0xFFFFFFFF (max uint32)"
+    },
+    {
+      "claim": "Upstream tests confirm the stale rule: re-applying an equal or lower sequence manifest returns stale, while a max-sequence manifest is accepted.",
+      "evidence": "src/test/app/Manifest_test.cpp lines [1020, 1026, 1028, 1034, 1045, 1047, 1055]",
+      "id": "REC-10",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "stale expectations=6"
+    },
+    {
+      "claim": "The validator token must be present in the postfiatd config file for the node to validate.",
+      "evidence": "docs/NodeSetup.md lines [275]",
+      "id": "REC-11",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "token-in-config required for validation"
+    },
+    {
+      "claim": "Node database is NuDB at /var/lib/postfiatd/db/nudb; book-keeping databases live under /var/lib/postfiatd/db.",
+      "evidence": "cfg/postfiatd-mainnet-full.cfg lines [1477, 1478, 1479, 1483, 1484]",
+      "id": "REC-12",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "node_db=NuDB /var/lib/postfiatd/db/nudb; database_path=/var/lib/postfiatd/db"
+    },
+    {
+      "claim": "When no validators file is configured, the loader looks for validators.txt in the config directory and does not complain if it is missing (path cleared, no error); an explicitly configured missing file is fatal. The mainnet config sets [validators_file] validators.txt explicitly.",
+      "evidence": "src/xrpld/core/detail/Config.cpp lines [249, 914]; cfg/postfiatd-mainnet-full.cfg lines [1501, 1502]",
+      "id": "REC-13",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "validators.txt default; missing default tolerated, missing explicit path fatal"
+    },
+    {
+      "claim": "The mainnet validator-list file trusts exactly one publisher key and points at a testnet list URL.",
+      "evidence": "cfg/validators-mainnet.txt lines [56, 59]",
+      "id": "REC-14",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "publisher keys=1; site=https://postfiat.org/testnet_vl.json"
+    },
+    {
+      "claim": "With fewer than 3 publishers the list threshold is 1, so the single publisher alone decides the trusted list.",
+      "evidence": "src/xrpld/app/misc/detail/ValidatorList.cpp lines [210]",
+      "id": "REC-15",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "threshold = size<3 ? 1 : size/2+1; 1 publisher -> threshold 1"
+    },
+    {
+      "claim": "A locally configured validator list never expires, unlike fetched lists.",
+      "evidence": "src/xrpld/app/misc/detail/ValidatorList.cpp lines [961]",
+      "id": "REC-16",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "local list: no expiry"
+    },
+    {
+      "claim": "Every redeploy deletes the postfiatd-config Docker volume (3 jobs), so the validator token is never persisted across redeploys.",
+      "evidence": ".github/workflows/deploy.yml lines [153, 403, 663]",
+      "id": "REC-17",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "config-volume deletions per deploy: 3"
+    },
+    {
+      "claim": "After redeploy the validator token is re-injected from GitHub Secrets over SSH, selected by host IP and network.",
+      "evidence": ".github/workflows/deploy.yml lines [100, 109, 281, 282]",
+      "id": "REC-18",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "token source: GitHub Secrets, injected per host IP"
+    },
+    {
+      "claim": "The config-volume wipe happens before the token re-injection in the deploy script, so a failed injection leaves a tokenless config.",
+      "evidence": ".github/workflows/deploy.yml volume-rm lines [153, 403, 663]; injection line [281]",
+      "id": "REC-19",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "wipe precedes injection in script order"
+    },
+    {
+      "claim": "The destroy workflow removes every postfiatd volume and deletes /opt/postfiatd \u2014 a one-command total host data loss.",
+      "evidence": ".github/workflows/destroy.yml lines [70, 73, 77, 101, 104, 108]",
+      "id": "REC-20",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "destroy: compose down --volumes + volume rm + rm -rf /opt/postfiatd"
+    },
+    {
+      "claim": "Config and ledger data live in named Docker volumes on the host (/etc/postfiatd, /var/lib/postfiatd/db); host loss destroys them unless copied off-host.",
+      "evidence": "scripts/docker-compose-validator.yml lines [13, 14]",
+      "id": "REC-21",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "volumes: postfiatd-config -> /etc/postfiatd; postfiatd-data -> /var/lib/postfiatd/db"
+    },
+    {
+      "claim": "The container entrypoint performs no key generation, key restore, or token handling \u2014 it only rotates logs and starts postfiatd.",
+      "evidence": "scripts/docker-entrypoint.sh (no validator-keys/seed/token/secret strings)",
+      "id": "REC-22",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "entrypoint: cron + logrotate + exec postfiatd only"
+    },
+    {
+      "claim": "wallet.db holds manifests (including revocations); the hotfix doc orders a wallet.db backup before any destructive restart and forbids deleting wallet.db as a recovery procedure.",
+      "evidence": "docs/MANIFEST_FLOOD_HOTFIX.md lines [45, 114]",
+      "id": "REC-23",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "wallet.db: manifest store; backup-before-restart ordered; deletion forbidden"
+    },
+    {
+      "claim": "Ledger replay exists as a mechanism: a replayer fetches a skip list and ledger deltas from the network, so ledger state is re-acquirable from peers rather than from backup.",
+      "evidence": "docs/0010-ledger-replay/README.md lines [3, 19, 22, 23, 26, 27, 30, 33, 34, 38, 39, 57, 65, 66, 72, 73]",
+      "id": "REC-24",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "ledger replay: skip-list + delta acquire from network"
+    },
+    {
+      "claim": "Key rotation uses validator-keys create_token / set_domain; moving to new hardware is a documented reason to generate a new token.",
+      "evidence": "docs/ValidatorKeyUpdate.md lines [83, 104, 116]",
+      "id": "REC-25",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "rotation tools: create_token, set_domain"
+    },
+    {
+      "claim": "A revocation is generated with the master key and published via [validator_key_revocation]; the config documents the single base64-blob field as a commented example section.",
+      "evidence": "cfg/postfiatd-mainnet-full.cfg lines [722]; src/xrpld/app/misc/Manifest.h lines [71]",
+      "id": "REC-26",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "revocation field documented (commented example); revocation = max-sequence manifest"
+    },
+    {
+      "claim": "A validation seed is a 128-bit value (base58 or hex), the sole input to master key derivation on the seed path.",
+      "evidence": "src/libxrpl/protocol/Seed.cpp lines [56]",
+      "id": "REC-27",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "seed = uint128"
+    },
+    {
+      "claim": "Validators have pathfinding disabled by default unless a validation seed or token is configured.",
+      "evidence": "src/xrpld/core/detail/Config.cpp lines [676]",
+      "id": "REC-28",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "no seed/token -> no pathfinding (non-validating behaviour)"
+    },
+    {
+      "claim": "No file in the pinned tree outside vendored third-party code is about backup, restore, disaster recovery, or snapshots; backup guidance is limited to validator-keys.json and wallet.db warnings in three docs.",
+      "evidence": "evidence/pinned-tree-paths.txt; backup mentions {'docs/NodeSetup.md': 5, 'docs/ValidatorKeyUpdate.md': 11, 'docs/MANIFEST_FLOOD_HOTFIX.md': 2, 'docs/Docker.md': 0, 'docs/DeploymentWorkflows.md': 0, 'docs/consensus.md': 0}; secp256k1 signature-recovery files excluded: 6",
+      "id": "REC-29",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "tree paths matching backup/restore/disaster/recovery/snapshot (excl. external/): 0; secp256k1 signature-recovery files: 6; backup mentions confined to 3 docs"
+    },
+    {
+      "claim": "The only backup cadence guidance is advisory: 'Regularly backup your configuration and keys' \u2014 no schedule, no verification step, no restore test.",
+      "evidence": "docs/NodeSetup.md lines [450]",
+      "id": "REC-30",
+      "label": "MEASURED",
+      "result": "PASS",
+      "value": "backup cadence: advisory only"
+    }
+  ]
+}

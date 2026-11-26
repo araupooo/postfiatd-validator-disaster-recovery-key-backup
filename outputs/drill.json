@@ -1,0 +1,457 @@
+{
+  "cases": [
+    {
+      "id": "DR-00",
+      "label": "SIMULATED",
+      "notes": "RFC 6979 deterministic nonces; no randomness",
+      "outcome": "PASS",
+      "scenario": "Crypto self-test: lab secp256k1 sign/verify and node-ID determinism",
+      "steps": [
+        {
+          "actual": "verify True",
+          "expected": "verify True",
+          "result": "PASS",
+          "step": "sign/verify round-trip"
+        },
+        {
+          "actual": "verify False",
+          "expected": "verify False",
+          "result": "PASS",
+          "step": "tampered message rejected"
+        },
+        {
+          "actual": "verify False",
+          "expected": "verify False",
+          "result": "PASS",
+          "step": "wrong key rejected"
+        },
+        {
+          "actual": "2e70c0aad6160ac5e60fae80ad0ec847d63fd758",
+          "expected": "2e70c0aad6160ac5e60fae80ad0ec847d63fd758",
+          "result": "PASS",
+          "step": "node ID stable for same key"
+        }
+      ],
+      "verdict": "primitive sound; drill model rests on verified signatures"
+    },
+    {
+      "id": "DR-01",
+      "label": "SIMULATED",
+      "notes": "ledger history is re-synced from the network, not restored from backup",
+      "outcome": "PASS",
+      "scenario": "Host loss with a complete off-host backup: full rebuild",
+      "steps": [
+        {
+          "actual": "6/6 artifacts",
+          "expected": "6/6 artifacts",
+          "result": "PASS",
+          "step": "bundle completeness"
+        },
+        {
+          "actual": "all digests verify",
+          "expected": "all digests verify",
+          "result": "PASS",
+          "step": "bundle digests match"
+        },
+        {
+          "actual": "nodeID 2e70c0aad6160ac5e60fae80ad0ec847d63fd758",
+          "expected": "nodeID 2e70c0aad6160ac5e60fae80ad0ec847d63fd758",
+          "result": "PASS",
+          "step": "identity restored from master secret"
+        },
+        {
+          "actual": "valid=True",
+          "expected": "both signatures valid",
+          "result": "PASS",
+          "step": "token manifest signatures verify"
+        },
+        {
+          "actual": "sequence 3",
+          "expected": "sequence 3 == backed-up 3",
+          "result": "PASS",
+          "step": "manifest sequence continuous"
+        },
+        {
+          "actual": "trusted=True",
+          "expected": "own key in publisher list",
+          "result": "PASS",
+          "step": "UNL re-admission"
+        },
+        {
+          "actual": "in-set=True",
+          "expected": "snapshot hash in validated set",
+          "result": "PASS",
+          "step": "ledger snapshot is a validated hash"
+        }
+      ],
+      "verdict": "RECOVERED \u2014 identity, token, config, UNL and a usable ledger base all restore; catch-up sync time is UNTESTABLE (network-dependent)"
+    },
+    {
+      "id": "DR-02",
+      "label": "SIMULATED",
+      "notes": "token-only backup is a partial-recovery trap (REC-03)",
+      "outcome": "PASS",
+      "scenario": "Host loss with a token-only backup (no validator-keys.json)",
+      "steps": [
+        {
+          "actual": "valid=True",
+          "expected": "both signatures valid",
+          "result": "PASS",
+          "step": "token manifest verifies"
+        },
+        {
+          "actual": "accepted=True",
+          "expected": "sequence 3 accepted",
+          "result": "PASS",
+          "step": "validation resumes from token"
+        },
+        {
+          "actual": "possible=False",
+          "expected": "impossible",
+          "result": "PASS",
+          "step": "rotation possible without master key"
+        },
+        {
+          "actual": "possible=False",
+          "expected": "impossible",
+          "result": "PASS",
+          "step": "revocation possible without master key"
+        }
+      ],
+      "verdict": "PARTIAL \u2014 validation resumes, but rotation and revocation are lost with the master key; the backup looks complete and is not"
+    },
+    {
+      "id": "DR-03",
+      "label": "SIMULATED",
+      "notes": "the operator cannot tell from local logs that peers ignore the validator",
+      "outcome": "PASS",
+      "scenario": "Host loss with a seed-only backup (sequence state lost)",
+      "steps": [
+        {
+          "actual": "nodeID 2e70c0aad6160ac5e60fae80ad0ec847d63fd758",
+          "expected": "nodeID 2e70c0aad6160ac5e60fae80ad0ec847d63fd758",
+          "result": "PASS",
+          "step": "identity re-derived from seed"
+        },
+        {
+          "actual": "sequence 0",
+          "expected": "sequence 0 (no sequence state in a seed)",
+          "result": "PASS",
+          "step": "seed-path sequence"
+        },
+        {
+          "actual": "disposition=stale",
+          "expected": "stale (0 <= cached 3)",
+          "result": "PASS",
+          "step": "peer disposition of rebuilt token"
+        },
+        {
+          "actual": "accepted=none",
+          "expected": "none (stale manifest ignored)",
+          "result": "PASS",
+          "step": "validations accepted by peers"
+        }
+      ],
+      "verdict": "SILENT FAILURE \u2014 the node restarts and looks healthy, but peers dispose its manifest as stale and ignore its validations; recovery needs the backed-up sequence, which lives only in validator-keys.json"
+    },
+    {
+      "id": "DR-04",
+      "label": "SIMULATED",
+      "notes": "rotation is the documented create_token path",
+      "outcome": "PASS",
+      "scenario": "Signing-key compromise: rotate to a new ephemeral key (sequence 4)",
+      "steps": [
+        {
+          "actual": "disposition=accepted",
+          "expected": "accepted",
+          "result": "PASS",
+          "step": "new token sequence 4 accepted"
+        },
+        {
+          "actual": "valid=True",
+          "expected": "both valid",
+          "result": "PASS",
+          "step": "new token signatures verify"
+        },
+        {
+          "actual": "disposition=stale",
+          "expected": "stale",
+          "result": "PASS",
+          "step": "old token replayed after rotation"
+        },
+        {
+          "actual": "disposition=stale",
+          "expected": "stale",
+          "result": "PASS",
+          "step": "old token already stale before rotation (peers cached seq 3)"
+        }
+      ],
+      "verdict": "RECOVERED \u2014 the rotated token is accepted and the old token is stale; requires the master key (validator-keys.json) to sign the new manifest"
+    },
+    {
+      "id": "DR-05",
+      "label": "SIMULATED",
+      "notes": "matches the documented consequence (REC-03)",
+      "outcome": "PASS",
+      "scenario": "Master-key loss with no backup: identity unrecoverable",
+      "steps": [
+        {
+          "actual": "possible=False",
+          "expected": "impossible",
+          "result": "PASS",
+          "step": "new token without master key"
+        },
+        {
+          "actual": "possible=False",
+          "expected": "impossible",
+          "result": "PASS",
+          "step": "revocation without master key"
+        },
+        {
+          "actual": "possible=False",
+          "expected": "impossible",
+          "result": "PASS",
+          "step": "domain update without master key"
+        },
+        {
+          "actual": "new nodeID adc9da338762de8ccebae9d4259ca058a36a0d95",
+          "expected": "new nodeID adc9da338762de8ccebae9d4259ca058a36a0d95 != 2e70c0aad6160ac5e60fae80ad0ec847d63fd758",
+          "result": "PASS",
+          "step": "only remedy: new identity"
+        }
+      ],
+      "verdict": "UNRECOVERABLE \u2014 the validator identity cannot be rebuilt; the operator must create a new identity and get it listed by the UNL publisher (operator/publisher action, timing UNTESTABLE)"
+    },
+    {
+      "id": "DR-06",
+      "label": "SIMULATED",
+      "notes": "revocation is terminal by design",
+      "outcome": "PASS",
+      "scenario": "Master-key compromise: revoke with a max-sequence manifest",
+      "steps": [
+        {
+          "actual": "disposition=revoked",
+          "expected": "revoked",
+          "result": "PASS",
+          "step": "revocation manifest accepted"
+        },
+        {
+          "actual": "valid=True",
+          "expected": "both valid",
+          "result": "PASS",
+          "step": "revocation signature verifies"
+        },
+        {
+          "actual": "disposition=stale",
+          "expected": "stale (max sequence already cached)",
+          "result": "PASS",
+          "step": "later manifest after revocation"
+        }
+      ],
+      "verdict": "RECOVERED (as revocation) \u2014 peers drop trust permanently; requires the master key, so a lost master key cannot be revoked either"
+    },
+    {
+      "id": "DR-07",
+      "label": "SIMULATED",
+      "notes": "no local error: the failure is visible only in missing validations",
+      "outcome": "PASS",
+      "scenario": "Rebuild with a tokenless config (token never re-injected)",
+      "steps": [
+        {
+          "actual": "loaded=False",
+          "expected": "none",
+          "result": "PASS",
+          "step": "keys loaded from config"
+        },
+        {
+          "actual": "starts",
+          "expected": "starts (config is valid)",
+          "result": "PASS",
+          "step": "node starts"
+        },
+        {
+          "actual": "validates=False",
+          "expected": "no (no keys)",
+          "result": "PASS",
+          "step": "node validates"
+        },
+        {
+          "actual": "enabled=False",
+          "expected": "no",
+          "result": "PASS",
+          "step": "pathfinding enabled"
+        }
+      ],
+      "verdict": "SILENT FAILURE \u2014 the process is up and healthy, but the node does not validate; this is the failure mode of a deploy whose token injection step fails after the config volume was wiped"
+    },
+    {
+      "id": "DR-08",
+      "label": "SIMULATED",
+      "notes": "single-publisher UNL makes this a one-mistake failure",
+      "outcome": "PASS",
+      "scenario": "Rebuild with the wrong validator list (wrong publisher / missing own key)",
+      "steps": [
+        {
+          "actual": "trusted=False",
+          "expected": "absent",
+          "result": "PASS",
+          "step": "own key in the configured UNL"
+        },
+        {
+          "actual": "accepted=none",
+          "expected": "none (not on peers' UNL)",
+          "result": "PASS",
+          "step": "validations accepted by peers"
+        },
+        {
+          "actual": "local error=none",
+          "expected": "no (UNL mismatch is silent locally)",
+          "result": "PASS",
+          "step": "node reports an error locally"
+        }
+      ],
+      "verdict": "SILENT FAILURE \u2014 the validator signs, but peers do not trust it because its key is not on their UNL; nothing in the local log says so"
+    },
+    {
+      "id": "DR-09",
+      "label": "SIMULATED",
+      "notes": "no backup artifact in the tree covers ledger data",
+      "outcome": "PASS",
+      "scenario": "Ledger snapshot hash does not match any validated ledger",
+      "steps": [
+        {
+          "actual": "in-set=False",
+          "expected": "absent",
+          "result": "PASS",
+          "step": "snapshot hash in validated set"
+        },
+        {
+          "actual": "restorable=no",
+          "expected": "no (must re-sync from network)",
+          "result": "PASS",
+          "step": "ledger state restorable from snapshot"
+        },
+        {
+          "actual": "measurable=no",
+          "expected": "no (UNTESTABLE \u2014 network-dependent)",
+          "result": "PASS",
+          "step": "re-sync duration measurable in lab"
+        }
+      ],
+      "verdict": "NOT RESTORABLE from snapshot \u2014 the node must re-sync ledger state from peers; how long that takes is UNTESTABLE in the lab"
+    },
+    {
+      "id": "DR-10",
+      "label": "SIMULATED",
+      "notes": "the backup must live off the host it protects",
+      "outcome": "PASS",
+      "scenario": "Destroy-workflow equivalence: total host data loss",
+      "steps": [
+        {
+          "actual": "0/6",
+          "expected": "0/6",
+          "result": "PASS",
+          "step": "local artifacts surviving destroy"
+        },
+        {
+          "actual": "6/6",
+          "expected": "6/6",
+          "result": "PASS",
+          "step": "off-host bundle completeness"
+        },
+        {
+          "actual": "0/6",
+          "expected": "0/6",
+          "result": "PASS",
+          "step": "on-host bundle completeness after destroy"
+        },
+        {
+          "actual": "yes",
+          "expected": "yes",
+          "result": "PASS",
+          "step": "recovery depends entirely on the off-host copy"
+        }
+      ],
+      "verdict": "RECOVERABLE only with an off-host backup; an on-host-only backup is destroyed by the same event it was meant to survive"
+    }
+  ],
+  "cases_failed": [],
+  "cases_passed": 11,
+  "cases_total": 11,
+  "failure_modes": [
+    {
+      "detection": "None locally; only visible as missing validations on the network.",
+      "drill": "DR-03",
+      "id": "FM-01",
+      "mechanism": "Seed path sets sequence 0; peers already cached sequence 3; rebuilt manifest is stale and validations are ignored.",
+      "name": "Sequence reset after seed-only restore",
+      "severity": "High",
+      "silent": true
+    },
+    {
+      "detection": "None locally; missing validations.",
+      "drill": "DR-04",
+      "id": "FM-02",
+      "mechanism": "An old backup restored after a rotation carries a lower sequence than the one peers cached; it is stale.",
+      "name": "Stale token restored after rotation",
+      "severity": "Medium",
+      "silent": true
+    },
+    {
+      "detection": "Only discovered at the next rotation or compromise, when the master key is needed.",
+      "drill": "DR-02",
+      "id": "FM-03",
+      "mechanism": "Validation resumes from the token, but rotation and revocation need the master key, which is gone.",
+      "name": "Token-only backup masquerades as full recovery",
+      "severity": "High",
+      "silent": true
+    },
+    {
+      "detection": "Obvious at rebuild time (no key material), but unfixable.",
+      "drill": "DR-05",
+      "id": "FM-04",
+      "mechanism": "No master key means no new token, no revocation, no domain update; the identity is unrecoverable.",
+      "name": "Master-key loss with no backup",
+      "severity": "Critical",
+      "silent": false
+    },
+    {
+      "detection": "None locally; node is up but does not validate.",
+      "drill": "DR-07",
+      "id": "FM-05",
+      "mechanism": "Deploy wipes the config volume, then injects the token; a failed injection leaves a valid config with no validator keys.",
+      "name": "Tokenless config after failed injection",
+      "severity": "High",
+      "silent": true
+    },
+    {
+      "detection": "None locally; missing validations on the network.",
+      "drill": "DR-08",
+      "id": "FM-06",
+      "mechanism": "Recovered validator's key is absent from peers' trusted lists, so its validations are ignored.",
+      "name": "Wrong UNL after rebuild",
+      "severity": "High",
+      "silent": true
+    },
+    {
+      "detection": "Visible as a long sync; duration is UNTESTABLE in the lab.",
+      "drill": "DR-09",
+      "id": "FM-07",
+      "mechanism": "A snapshot whose hash matches no validated ledger cannot seed the node database; full re-sync is required.",
+      "name": "Ledger snapshot unusable",
+      "severity": "Medium",
+      "silent": false
+    }
+  ],
+  "lab_master_pubkey": "03ed88023e480853b30a7bd254acc997ec1e82bce46a69d5b740c256462bf5b99f",
+  "lab_node_id": "2e70c0aad6160ac5e60fae80ad0ec847d63fd758",
+  "label": "SIMULATED",
+  "model_conventions": {
+    "lab_keys": "fixed test secrets derived from SHA-256 of labelled strings; never real keys",
+    "manifest": "canonical string master|signing|sequence|domain, signed by master and signing secp256k1 keys (RFC 6979 nonces)",
+    "node_id": "first 20 bytes of SHA-512 over the compressed public key (model convention; pinned source establishes nodeID = calcNodeID(masterKey) deterministically)",
+    "peer_cache": "manifest with sequence <= cached sequence is stale (Manifest.cpp:411); sequence 0xFFFFFFFF revokes (Manifest.cpp:240)",
+    "unl": "validator trusted iff its master public key is listed by a configured trusted publisher"
+  },
+  "pinned_commit": "0085a1ff885d6a446369cf73a4430f75af22be55"
+}
