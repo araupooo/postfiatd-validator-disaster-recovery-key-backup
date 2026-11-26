@@ -1,0 +1,20 @@
+name: Fresh-clone reproduction check
+
+# Runs the pack's fresh-clone reproduction from the pack alone: no network,
+# no postfiatd clone, no Conan, no package manager. Attests the committed
+# byte-comparison independently of the author's machine.
+on:
+  push:
+  pull_request:
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check python3 and sha256sum
+        run: |
+          python3 --version
+          sha256sum --version | head -1
+      - name: Fresh-clone reproduction
+        run: sh scripts/clean_reproduce.sh
